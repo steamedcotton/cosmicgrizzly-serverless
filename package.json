@@ -1,0 +1,23 @@
+{
+  "name": "cosmicgrizzly-serverless-auth",
+  "version": "0.0.1",
+  "description": "Auth library to help accelerate the creation of serverless auth systems",
+  "main": "src/index.js",
+  "author": "Eric Erickson",
+  "license": "MIT",
+  "private": false,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "bcrypt-nodejs": "^0.0.3",
+    "bluebird": "^3.5.1",
+    "joi": "^13.1.2",
+    "jwt-simple": "^0.5.1",
+    "lodash": "^4.17.5",
+    "loggly": "^1.1.1",
+    "moment": "^2.22.1",
+    "mustache": "^2.3.0",
+    "query-string": "^6.0.0"
+  }
+}
