@@ -25,6 +25,13 @@ class Email {
             this.sourceAddress = emailSourceAddress || process.env.EMAIL_SOURCE_ADDRESS;
             this.verificationUrl = emailVerificationUrl || process.env.EMAIL_VERIFICATION_URL;
             this.verficationTemplate = 'verificationTemplate01.html';
+
+            if (_.has(config, 'validationEmailParams')) {
+                this.emailVerificationParams = config.validationEmailParams;
+            } else {
+                this.emailVerificationParams = emailVerificationParams;
+            }
+
             logger = getLogger(config);
             logger.debug('Email initialized');
         }
@@ -33,7 +40,7 @@ class Email {
     }
 
     sendVerificationEmail(emailAddress, validationCode) {
-        const templateParams = _.merge(emailVerificationParams, {
+        const templateParams = _.merge(this.emailVerificationParams, {
             validationCode,
             verificationUrl: `${this.verificationUrl}?code=${validationCode}`,
             emailAddress

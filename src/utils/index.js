@@ -29,9 +29,15 @@ module.exports.parsePayload = (payload) => {
 };
 
 
-module.exports.getHeaderFromEvent = (event, header) => {
-    return new Promise((resolve) => {
-        const headerValue = _.get(event, `headers.${header}`, '');
+module.exports.getHeaderFromEvent = function(event, header) {
+    return new Promise((resolve, reject) => {
+        let headerValue;
+        if (header.toLowerCase() === 'authorization') {
+            headerValue = _.get(event, `headers.Authorization`, _.get(event, `headers.authorization`, ''));
+            headerValue = headerValue.replace(/[Bb]earer /, '');
+        } else {
+            headerValue = _.get(event, `headers.${header}`, '');
+        }
         return resolve(headerValue);
     });
 };
