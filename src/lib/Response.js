@@ -7,6 +7,7 @@ const SERVER_ERR = 'SERVER_ERR';
 const BAD_REQUEST = 'BAD_REQUEST';
 const UNAUTHORIZED = 'UNAUTHORIZED';
 const PAYLOAD_PARSE_ERROR = 'PAYLOAD_PARSE_ERROR';
+const CONFLICT = 'CONFLICT';
 
 const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -15,8 +16,13 @@ const headers = {
 
 class Response {
     static success(content) {
-        const responseBody = _.merge({ status: SUCCESS }, content);
-        console.log(responseBody);
+        let responseBody;
+        if (_.isString(content)) {
+            responseBody = { message: content, status: SUCCESS };
+        } else {
+            responseBody = _.merge({ status: SUCCESS }, content);
+        }
+
         return {
             statusCode: 200,
             body: JSON.stringify(responseBody),
@@ -64,6 +70,15 @@ class Response {
         const responseBody = { status: UNAUTHORIZED, error };
         return {
             statusCode: 401,
+            body: JSON.stringify(responseBody),
+            headers
+        };
+    }
+
+    static conflictError(error = 'Resource already exists') {
+        const responseBody = { status: CONFLICT, error };
+        return {
+            statusCode: 409,
             body: JSON.stringify(responseBody),
             headers
         };

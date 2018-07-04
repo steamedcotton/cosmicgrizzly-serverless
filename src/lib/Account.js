@@ -20,13 +20,14 @@ let logger = null;
 
 class Account {
     constructor(config) {
-        const { jwtSecret, accountTable, profileTable, tokenLifeSeconds } = config;
+        const { jwtSecret, accountTable, profileTable, tokenLifeSeconds, jwtPayloadHook } = config;
 
         this.time = new Date();
 
         if (!instance) {
             instance = this;
             this.jwtSecret = jwtSecret || process.env.JWT_SECRET;
+            this.jwtPayloadHook = _.isFunction(jwtPayloadHook) ? jwtPayloadHook : (payload) => payload;
             this.accountTable = accountTable || process.env.TBL_ACCOUNT;
             this.profileTable = profileTable || process.env.TBL_PROFILE;
             this.cache = new Cache(config);
@@ -121,11 +122,14 @@ class Account {
 
     getTokensByAccount(account, oldRefreshToken = false) {
         logger.debug(`Retrieving tokens for accountId ${account.accountId}`, { accountId: account.accountId });
-        const accessTokenPayload = {
+        const payload = {
             iat: new Date().getTime(),
             sub: account.accountId,
             exp: new Date().getTime() + (this.tokenLifeSeconds * 1000)
         };
+
+        // Allow the extension of the JWT token payload
+        const accessTokenPayload = this.jwtPayloadHook(payload, account);
 
         return this.cache.generateAndSaveRefreshToken(account.accountId, oldRefreshToken)
             .then((refreshToken) => ({

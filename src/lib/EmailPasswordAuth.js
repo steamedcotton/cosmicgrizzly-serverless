@@ -43,22 +43,21 @@ class EmailPasswordAuth {
         const params = { email, password };
         const joiResult = Joi.validate(params, emailAndPassword);
         if (joiResult.error) {
-            console.log('JOI ERROR');
+            logger.debug('JOI Validation Error', joiResult.error);
             return Promise.reject(Response.validationError('You must provide a valid email and password'));
         }
 
         return this.getEmailPasswordEntry(email)
             .then((entry) => {
-                console.log('HERE 1');
+                console.log('Look an entry', entry);
                 // Reject if there an entry already exists
                 if (!_.isEmpty(entry)) {
-                    return Promise.reject(Response.validationError('You must provide a valid email and password'));
+                    return Promise.reject(Response.conflictError('Existing account found'));
                 }
                 const newAccountId = Account.createNewAccountId();
                 return this.addNewEmailPasswordToDB(newAccountId, email, password, isVerified);
             })
             .then((result) => {
-                console.log('HERE 2');
                 if (isVerified) {
                     return Promise.resolve(result);
                 }
@@ -202,6 +201,10 @@ class EmailPasswordAuth {
     }
 
     activateAccountWithToken(token) {
+        if (_.isEmpty(token)) {
+            return Promise.reject(Response.badRequest('Activation token missing'));
+        }
+
         logger.debug(`Activating email account with token`, { token });
         return this.cache.getToken(token, Cache.TYPE_VERIFY_EMAIL)
             .then((token) => {

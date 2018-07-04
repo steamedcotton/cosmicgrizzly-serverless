@@ -1,12 +1,13 @@
 //const _ = require('lodash');
 
-const { parsePayload } = require('./utils');
+const { parsePayload, getHeaderFromEvent } = require('./utils');
 const { getLogger } = require('./lib/logger');
 
 const EmailPasswordAuth = require('./lib/EmailPasswordAuth');
 const Account = require('./lib/Account');
 const Response = require('./lib/Response');
 const Email = require('./lib/Email');
+const Token = require('./lib/Token');
 
 let instance = null;
 let logger = null;
@@ -18,6 +19,7 @@ class CGAuth {
             this.emailPasswordAuth = new EmailPasswordAuth(config);
             this.account = new Account(config);
             this.email = new Email(config);
+            this.token = new Token(config);
 
             logger = getLogger(config);
             logger.debug('Finished initiation of CGAuth');
@@ -26,8 +28,12 @@ class CGAuth {
         return instance;
     }
 
+    getLogger() {
+        return logger;
+    }
+
     emailPasswordAccountSignup(event, context, callback) {
-        logger.debug('Event', event);
+        logger.debug('Email password signup');
         let createParams = {};
         let accountId;
         let params;
@@ -77,21 +83,44 @@ class CGAuth {
 
     emailPasswordAccountActivation(event, context, callback) {
         logger.debug('Verifying provided email token');
-        console.log('event', event);
         let params;
-        parsePayload(event.queryStringParameters)
+        console.log(event);
+        parsePayload(event.body)
             .then((_params) => {
                 params = _params;
                 logger.debug('Activating account using token', { code: params.code });
                 return this.emailPasswordAuth.activateAccountWithToken(params.code);
             })
             .then(() => {
-                callback(null, Response.success({ go: 'team' }));
+                callback(null, Response.success('Account activated'));
             })
             .catch((err) => {
                 logger.error('Error validating email account', { error: err });
                 callback(null, Response.catchError(err));
             });
+    }
+
+    refresh(event, context, callback) {
+        logger.debug('Starting JWT refresh');
+        parsePayload(event.body)
+            .then((params) => this.account.getTokensByRefreshToken(params.refreshToken))
+            .then((payload) => {
+                logger.info('Successful refresh of token', { type: 'refresh' });
+                callback(null, Response.success(payload));
+            })
+            .catch((err) => {
+                callback(null, Response.catchError(err));
+            });
+    }
+
+    hasRole(event, role, customerId) {
+        return getHeaderFromEvent(event, 'authorization')
+            .then((jwtToken) => this.token.hasRole(jwtToken, role, customerId))
+    }
+
+    getJwtProp(event, propName) {
+        return getHeaderFromEvent(event, 'authorization')
+            .then((jwtToken) => this.token.getJwtProp(jwtToken, propName))
     }
 }
 
