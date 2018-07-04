@@ -1,7 +1,7 @@
 {
-  "name": "cosmicgrizzly-serverless-auth",
+  "name": "cosmicgrizzly-serverless",
   "version": "0.0.1",
-  "description": "Auth library to help accelerate the creation of serverless auth and apis",
+  "description": "Libraries to help accelerate the creation of serverless auth and apis",
   "main": "src/index.js",
   "author": "Eric Erickson",
   "license": "MIT",
