@@ -1,13 +1,17 @@
-const { createConfigFromEnv, parsePayload } = require('./utils');
-const CGAuth = require('./CGAuth');
+const { createConfigFromEnv, parsePayload, parseJson, getHeaderFromEvent } = require('./utils');
+const Auth = require('./Auth');
 const Response = require('./lib/Response');
+const { getLogger } = require('./lib/logger');
 
 module.exports = {
     // Classes
-    CGAuth,
+    Auth,
     Response,
 
     // Utils
     parsePayload,
-    createConfigFromEnv
+    createConfigFromEnv,
+    getLogger,
+    parseJson,
+    getHeaderFromEvent
 };

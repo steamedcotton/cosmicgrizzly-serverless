@@ -50,3 +50,35 @@ module.exports.createConfigFromEnv = (configMap) => {
     });
     return config;
 };
+
+module.exports.parseJson = (jsonText) => {
+    return new Promise((resolve, reject) => {
+        try {
+            const data = JSON.parse(jsonText);
+            resolve(data);
+        } catch (e) {
+            console.log('Body Text', jsonText);
+            reject({ statusCode: 400,
+                body: {
+                    status: 'JSON_PARSE',
+                    error: 'Request must be in valid JSON format'
+                }
+            });
+        }
+    });
+};
+
+module.exports.getHeaderFromEvent = (event, header) => {
+    return new Promise((resolve, reject) => {
+        let headerValue;
+        if (header.toLowerCase() === 'authorization') {
+            console.log('Getting auth header from:', event.headers);
+            headerValue = _.get(event, `headers.Authorization`, _.get(event, `headers.authorization`, ''));
+            headerValue = headerValue.replace(/[Bb]earer /, '');
+            console.log('Token value', headerValue);
+        } else {
+            headerValue = _.get(event, `headers.${header}`, '');
+        }
+        return resolve(headerValue);
+    });
+};

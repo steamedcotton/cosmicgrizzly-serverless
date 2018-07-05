@@ -12,7 +12,7 @@ const Token = require('./lib/Token');
 let instance = null;
 let logger = null;
 
-class CGAuth {
+class Auth {
     constructor(config) {
         if (!instance) {
             instance = this;
@@ -124,4 +124,4 @@ class CGAuth {
     }
 }
 
-module.exports = CGAuth;
+module.exports = Auth;
