@@ -23,6 +23,10 @@ class Token {
         return instance;
     }
 
+    encode(token) {
+        return jwt.encode(token, this.jwtSecret);
+    }
+
     hasRole(jwtToken, role, customerId = '') {
         return new Promise((resolve, reject) => {
             let decodedToken;
@@ -64,6 +68,7 @@ class Token {
             return resolve(_.get(decodedToken, propName, ''));
         });
     }
+
 
     resourceCheck(jwtToken, resource, principalId, methodArn) {
         return new Promise((resolve, reject) => {

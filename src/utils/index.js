@@ -8,37 +8,26 @@ const isQueryString = function (str) {
     return /=/.test(str);
 };
 
-module.exports.parsePayload = (payload) => {
+module.exports.parsePayload = (payload = {}, extra = {}) => {
+    console.log('Parsing payload', payload);
     return new Promise((resolve, reject) => {
         if (_.isObject(payload)) {
-            resolve(payload);
+            return resolve({ ...payload, ...extra });
         } else if (_.isString(payload)) {
             try {
                 const data = JSON.parse(payload);
-                resolve(data);
+                return resolve(data);
             } catch (e) {
                 // If this is not JSON, try to parse as query string
                 if (isQueryString(payload)) {
-                    resolve(queryString.parse(payload));
+                    return resolve({ ...queryString.parse(payload), ...extra });
                 } else {
-                    reject(Response.payloadParseError());
+                    return reject(Response.payloadParseError());
                 }
             }
         }
-    });
-};
 
-
-module.exports.getHeaderFromEvent = function(event, header) {
-    return new Promise((resolve, reject) => {
-        let headerValue;
-        if (header.toLowerCase() === 'authorization') {
-            headerValue = _.get(event, `headers.Authorization`, _.get(event, `headers.authorization`, ''));
-            headerValue = headerValue.replace(/[Bb]earer /, '');
-        } else {
-            headerValue = _.get(event, `headers.${header}`, '');
-        }
-        return resolve(headerValue);
+        resolve(extra);
     });
 };
 

@@ -32,6 +32,10 @@ class Auth {
         return logger;
     }
 
+    encodeToken(token) {
+        return this.token.encode(token);
+    }
+
     emailPasswordAccountSignup(event, context, callback) {
         logger.debug('Email password signup');
         let createParams = {};
