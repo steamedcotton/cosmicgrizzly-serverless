@@ -27,6 +27,10 @@ class Token {
         return jwt.encode(token, this.jwtSecret);
     }
 
+    decode(jwtToken) {
+        return jwt.decode(jwtToken, this.jwtSecret);
+    }
+
     hasRole(jwtToken, role, customerId = '') {
         return new Promise((resolve, reject) => {
             let decodedToken;
@@ -59,7 +63,7 @@ class Token {
         return new Promise((resolve, reject) => {
             let decodedToken;
             try {
-                decodedToken = jwt.decode(jwtToken, this.jwtSecret);
+                decodedToken = this.decode(jwtToken);
             } catch (err) {
                 logger.debug('Unable to decode jwtToken', { jwtToken });
                 return reject(Response.unauthorizedError('Invalid token'));

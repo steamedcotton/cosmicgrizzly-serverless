@@ -36,6 +36,10 @@ class Auth {
         return this.token.encode(token);
     }
 
+    decodeToken(jwtToken) {
+        return this.token.decode(jwtToken);
+    }
+
     emailPasswordAccountSignup(event, context, callback) {
         logger.debug('Email password signup');
         let createParams = {};
