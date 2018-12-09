@@ -5,7 +5,7 @@ const BaseLogger = require('./BaseLogger');
 // TODO: Add support for other logging providers
 let logger;
 
-module.exports.getLogger = (config) => {
+module.exports.getLogger = (config = {}) => {
     if (logger) {
         return logger;
     }

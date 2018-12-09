@@ -9,7 +9,6 @@ const isQueryString = function (str) {
 };
 
 module.exports.parsePayload = (payload = {}, extra = {}) => {
-    console.log('Parsing payload', payload);
     return new Promise((resolve, reject) => {
         if (_.isObject(payload)) {
             return resolve({ ...payload, ...extra });
