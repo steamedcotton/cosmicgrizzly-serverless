@@ -12,7 +12,7 @@ const Token = require('./lib/Token');
 let instance = null;
 let logger = null;
 
-class CGAuth {
+class Auth {
     constructor(config) {
         if (!instance) {
             instance = this;
@@ -30,6 +30,14 @@ class CGAuth {
 
     getLogger() {
         return logger;
+    }
+
+    encodeToken(token) {
+        return this.token.encode(token);
+    }
+
+    decodeToken(jwtToken) {
+        return this.token.decode(jwtToken);
     }
 
     emailPasswordAccountSignup(event, context, callback) {
@@ -124,4 +132,4 @@ class CGAuth {
     }
 }
 
-module.exports = CGAuth;
+module.exports = Auth;
