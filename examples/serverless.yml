@@ -1,0 +1,217 @@
+service: serviceName
+
+plugins:
+  - serverless-domain-manager
+
+custom:
+  stage: ${opt:stage, self:provider.stage}
+
+  # Secrets (API Keys, etc) are placed in a separate file. See secrets.template.yml file for the example layout.
+  secrets: ${file(./settings/secrets.yml):${self:custom.stage}}
+
+  # Domain settings are placed in a separate file: settings/domains.yml
+  domains: ${file(./settings/domains.yml):${self:custom.stage}}
+
+  # Environment specific setting are place in a separate file: settings/environments.yml
+  environments: ${file(./settings/environments.yml):${self:custom.stage}}
+
+  # Custom domain plugin (auto creates entry in route53)
+  customDomain:
+    domainName: ${self:custom.domains.auth}
+    basePath: ''
+    stage: ${self:provider.stage}
+    createRoute53Record: true
+    endpointType: regional
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+  region: us-west-2
+  profile: serverless-elm
+  memorySize: 512
+  stage: dev
+  environment:
+    # Table names based on service name and stage
+    TBL_EMAIL_PASSWORD: "${self:service}-${opt:stage, self:provider.stage}-email-password"
+    TBL_ACCOUNT: "${self:service}-${opt:stage, self:provider.stage}-account"
+    TBL_CACHE: "${self:service}-${opt:stage, self:provider.stage}-cache"
+    TBL_CACHE_ACCOUNT_INDEX: "${self:service}-${opt:stage, self:provider.stage}-cache-accountId-index"
+    TBL_PROFILE: "${self:service}-${opt:stage, self:provider.stage}-profile"
+
+
+    # S3 Bucket Names
+    BUCKET_LOGS: "${self:service}-${opt:stage, self:provider.stage}-logs"
+    BUCKET_: "${self:service}-${opt:stage, self:provider.stage}-logs"
+
+    # The private key used in signing JWTs
+    JWT_SECRET: "${self:custom.secrets.JWT_SECRET}"
+
+    # Lifespan of the JWT (in seconds)
+    TOKEN_LIFESPAN_SECONDS: "600"
+
+    # Provider Settings
+    PROVIDER_FACEBOOK_ID: "${self:custom.secrets.PROVIDER_FACEBOOK_ID}"
+    PROVIDER_FACEBOOK_SECRET: "${self:custom.secrets.PROVIDER_FACEBOOK_SECRET}"
+    PROVIDER_FACEBOOK_REDIRECT_URI: "https://${self:custom.domains.auth}/authentication/callback/facebook"
+    PROVIDER_GOOGLE_ID: "${self:custom.secrets.PROVIDER_GOOGLE_ID}"
+    PROVIDER_GOOGLE_SECRET: "${self:custom.secrets.PROVIDER_GOOGLE_SECRET}"
+    PROVIDER_GOOGLE_REDIRECT_URI: "https://${self:custom.domains.auth}/authentication/callback/google"
+
+    # Logger Settings
+    LOG_LEVEL: "${self:custom.environments.LOG_LEVEL}"
+    LOGGLY_API_TOKEN: "${self:custom.secrets.LOGGLY_API_TOKEN}"
+    LOGGLY_API_SUBDOMAIN: "songfoo"
+
+    # Email Settings
+    EMAIL_DOMAIN: "mywebsite.com"
+    EMAIL_SOURCE_ADDRESS: "no-reply@mywebsite.com"
+    EMAIL_VERIFICATION_URL: "${self:custom.environments.EMAIL_VERIFICATION_URL}"
+
+  iamRoleStatements:
+    # Allow access to all DynamoDB Tables
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:service}-${opt:stage, self:provider.stage}*"
+
+
+    # Allow lambdas to send emails (for the domain defined in EMAIL_DOMAIN)
+    - Effect: Allow
+      Action:
+        - ses:SendEmail
+      Resource: "arn:aws:ses:${opt:region, self:provider.region}:*:identity/${self:provider.environment.EMAIL_DOMAIN}"
+
+
+functions:
+
+  #############################################
+  #                 AUTH                      #
+  #############################################
+
+  emailPasswordAccountSignup:
+    handler: handlers.emailPasswordAccountSignup
+    name: ${self:service}-${self:provider.stage}-email-password-auth-create
+    events:
+      - http:
+          path: account/emailpassword
+          method: post
+          cors: true
+
+  emailPasswordAccountLogin:
+    handler: handlers.emailPasswordAccountLogin
+    name: ${self:service}-${self:provider.stage}-email-password-auth-login
+    events:
+      - http:
+          path: account/emailpassword/login
+          method: post
+          cors: true
+
+  emailPasswordAccountActivation:
+    handler: handlers.emailPasswordAccountActivation
+    name: ${self:service}-${self:provider.stage}-email-password-account-activation
+    events:
+      - http:
+          path: account/activation
+          method: post
+          cors: true
+
+  refresh:
+    handler: handlers.refresh
+    name: ${self:service}-${self:provider.stage}-refresh
+    events:
+      - http:
+          path: account/refresh
+          method: post
+          cors: true
+
+resources:
+  Resources:
+    ###################### Auth Tables ######################
+    TableEmailPasswordAuth:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: email
+            AttributeType: S
+        KeySchema:
+          - AttributeName: email
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.TBL_EMAIL_PASSWORD}
+    TableAccountAuth:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: accountId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: accountId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.TBL_ACCOUNT}
+    TableProfile:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: profileId
+            AttributeType: S
+          - AttributeName: profileType
+            AttributeType: S
+        KeySchema:
+          - AttributeName: profileId
+            KeyType: HASH
+          - AttributeName: profileType
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.TBL_PROFILE}
+    TableCache:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: token
+            AttributeType: S
+          - AttributeName: type
+            AttributeType: S
+          - AttributeName: accountId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: token
+            KeyType: HASH
+          - AttributeName: type
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.TBL_CACHE}
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true
+        GlobalSecondaryIndexes:
+          - IndexName: ${self:provider.environment.TBL_CACHE_ACCOUNT_INDEX}
+            KeySchema:
+              - AttributeName: accountId
+                KeyType: HASH
+              - AttributeName: type
+                KeyType: RANGE
+            Projection:
+              NonKeyAttributes:
+                - token
+                - type
+              ProjectionType: INCLUDE
+            ProvisionedThroughput:
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1

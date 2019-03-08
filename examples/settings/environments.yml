@@ -1,0 +1,12 @@
+default: &default
+    <<: *default
+    LOG_LEVEL: "debug"
+
+dev:
+    <<: *default
+    EMAIL_VERIFICATION_URL: "https://div-www.mywebsite.com/activation"
+
+prod:
+    <<: *default
+    EMAIL_VERIFICATION_URL: "https://www.mywebsite.com/activation"
+    LOG_LEVEL: "info"

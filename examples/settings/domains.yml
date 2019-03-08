@@ -1,0 +1,8 @@
+# Use this file to define the domains you want to use for each stage
+# See https://github.com/amplify-education/serverless-domain-manager for more information
+
+dev:
+  auth: dev-api.mywebsite.com
+
+prod:
+  auth: api.mywebsite.com

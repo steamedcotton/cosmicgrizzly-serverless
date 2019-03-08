@@ -49,7 +49,6 @@ class EmailPasswordAuth {
 
         return this.getEmailPasswordEntry(email)
             .then((entry) => {
-                console.log('Look an entry', entry);
                 // Reject if there an entry already exists
                 if (!_.isEmpty(entry)) {
                     return Promise.reject(Response.conflictError('Existing account found'));

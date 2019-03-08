@@ -15,12 +15,12 @@ const headers = {
 };
 
 class Response {
-    static success(content) {
+    static success(content, data = {}) {
         let responseBody;
         if (_.isString(content)) {
-            responseBody = { message: content, status: SUCCESS };
+            responseBody = { message: content, status: SUCCESS, data };
         } else {
-            responseBody = _.merge({ status: SUCCESS }, content);
+            responseBody = { status: SUCCESS, ...content };
         }
 
         return {
